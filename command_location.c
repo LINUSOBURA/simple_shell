@@ -11,6 +11,10 @@ void *command_location(char *command)
 	struct stat buffer;
 
 	path = getenv("PATH");
+	if (path == NULL)
+	{
+		return (NULL);
+	}
 
 	if (path)
 	{
@@ -30,6 +34,10 @@ void *command_location(char *command)
 
 			/* allocating memory for storing the command name together with the directory name */
 			file_path = malloc(command_len + directory_len + 2);
+			if (!file_path)
+			{
+				return (NULL);
+			}
 
 			/* to build the path for the command, copy the directory path and concatenate the command to it */
 			strcpy(file_path, path_token);
@@ -41,9 +49,14 @@ void *command_location(char *command)
 			if (stat(file_path, &buffer) == 0)
 			{
 				/* return value of 0 means success implying that the file_path is valid*/
-                /* free up allocated memory before returning the file_path */
+				/* free up allocated memory before returning the file_path */
 				free(path_cpy);
 				return (file_path);
+			}
+			else if (errno != ENOENT)
+			{
+				perror("stat");
+				free(file_path);
 			}
 			else
 			{
@@ -63,6 +76,7 @@ void *command_location(char *command)
 		}
 
 		return (NULL);
+		
 	}
 
 	return (NULL);
