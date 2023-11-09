@@ -13,20 +13,23 @@ int main(int argc, char **argv)
 	ssize_t chars_read;
 	const char *delim = " \n";
 	int num_tokens = 0, i, exit_command = 1;
+	pid_t child_pid;
 	(void)argc;
 
 	while (1)
 	{
-		if (!exit_command)
-		{
+		if (exit_command)
 			printf("%s", prompt);
-		}
 
 		chars_read = getline(&line, &n, stdin);
 		if (chars_read == -1)
 		{
-			return (-1);
+			perror("getline");
+			break;
 		}
+
+		if (chars_read == 1 && line[0] == '\n')
+			continue;
 
 		line_cpy = strdup(line);
 
@@ -40,15 +43,21 @@ int main(int argc, char **argv)
 
 		if (num_tokens > 0)
 		{
-			argv = malloc(sizeof(char *) * num_tokens);
-			if (!argv)
+			argv = malloc(sizeof(char *) * (num_tokens + 1));
+			if (argv == NULL)
 			{
+				perror("memmory allocation failed");
 				return (-1);
 			}
 			token = strtok(line_cpy, delim);
 			for (i = 0; token != NULL; i++)
 			{
 				argv[i] = malloc(strlen(token) + 1);
+				if (argv[i] == NULL)
+				{
+					perror("malloc");
+					return (-1);
+				}
 				strcpy(argv[i], token);
 
 				token = strtok(NULL, delim);
@@ -57,16 +66,31 @@ int main(int argc, char **argv)
 
 			if (strcmp(argv[0], "exit") == 0)
 			{
+				exit_command = 0;
 				break;
 			}
 
 			/* Execute the command*/
-			exec(argv);
+			child_pid = fork();
+			if (child_pid == 0)
+			{
+				execvp(argv[0], argv);
+                perror("execvp");
+                exit(1);
+			}
+
+			waitpid(child_pid, NULL, 0);
+
+			for (i = 0; argv[i] != NULL; i++)
+			{
+				free(argv[i]);
+			}
+			free(argv);
 
 		}
 
 	}
-
-	free(line), free(argv), free(line_cpy);
+	free(line);
+	free(line_cpy);
 	return (0);
 }
