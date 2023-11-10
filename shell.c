@@ -12,13 +12,14 @@ int main(int argc, char **argv)
 	char *line = NULL, *line_cpy = NULL, *token = NULL, *shell_name = NULL;
 	ssize_t chars_read;
 	const char *delim = " \n";
-	int num_tokens = 0, i, exit_command = 1;
+	int num_tokens = 0, i, exit_command = 1, child_exit_status, exec_status;
 	pid_t child_pid;
+	(void)argc;
 
 	if (argc > 0)
-			{
-				shell_name = argv[0];
-			}
+		{
+			shell_name = argv[0];
+		}
 
 	while (exit_command)
 	{
@@ -77,12 +78,19 @@ int main(int argc, char **argv)
 			child_pid = fork();
 			if (child_pid == 0)
 			{
-				execve(argv[0], argv, NULL);
-                fprintf(stderr, "%s: 1: %s: not found\n", shell_name, argv[0]);
-                exit(1);
+				exec_status = execvp(argv[0], argv);
+				if (exec_status == -1)
+				{
+					fprintf(stderr, "%s: 1: %s: not found\n", shell_name, argv[0]);
+					exit(1);
+				}
 			}
 
-			waitpid(child_pid, NULL, 0);
+			waitpid(child_pid, &child_exit_status, 0);
+			if (child_exit_status != 0)
+			{
+				exit(127);
+			}
 
 			for (i = 0; argv[i] != NULL; i++)
 			{
