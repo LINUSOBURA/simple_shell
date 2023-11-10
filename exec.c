@@ -5,15 +5,26 @@
 */
 void exec(char **argv)
 {
-	char *command = NULL, *actual_command = NULL;
+	char *command = NULL, *actual_command = NULL, **env;
 	pid_t pid;
-	int status;
+	int status, exit_status;
+	extern char **environ;
 
-	if (argv)
+	if (argv && argv[0])
 	{
 		command = argv[0];
 
+		if (strcmp(command, "env") == 0)
+		{
+			for (env = environ; *env != NULL; env++)
+			printf("%s\n", *env);
+		}
+
 		actual_command = command_location(command);
+		if (actual_command == NULL)
+		{
+			fprintf(stderr, "Failed to find command '%s'\n", command);
+		}
 
 		pid = fork();
 		if (pid == -1)
@@ -25,12 +36,26 @@ void exec(char **argv)
 		{
 			if (execve(actual_command, argv, NULL) == -1)
 			{
-				perror("Error:");
+				perror("execve");
+				exit(1);
 			}
 		}
 		else
 		{
-			waitpid(pid, &status, 0);
+			if (waitpid(pid, &status, 0) == -1)
+			{
+				perror("Waitpid");
+				exit(1);
+			}
+			exit_status = WEXITSTATUS(status);
+			if (exit_status != 0)
+			{
+				fprintf(stderr, "Command '%s' failed with the exit status %d\n", command, exit_status);
+			}
+		}
+		if (execve(actual_command, argv, NULL) == 0)
+		{
+			free(actual_command);
 		}
 	}
 }

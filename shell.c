@@ -12,50 +12,88 @@ int main(int argc, char **argv)
 	char *line = NULL, *line_cpy = NULL, *token = NULL;
 	ssize_t chars_read;
 	const char *delim = " \n";
-	int num_tokens = 0, i;
+	int num_tokens = 0, i, exit_command = 1;
+	pid_t child_pid;
 	(void)argc;
 
-	while (1)
+	while (exit_command)
 	{
-	printf("%s", prompt);
+		if (isatty(0))
+			printf("%s", prompt);
 
-	chars_read = getline(&line, &n, stdin);
-	if (chars_read == -1)
-	{
-		printf("Exiting the shell...\n");
-		return (-1);
-	}
+		chars_read = getline(&line, &n, stdin);
+		if (chars_read == -1)
+		{
+			break;
+		}
 
-	line_cpy = strdup(line);
+		if (chars_read == 1 && line[0] == '\n')
+			continue;
 
-	token = strtok(line, delim);
-	while (token != NULL)
-	{
+		line_cpy = strdup(line);
+
+		token = strtok(line, delim);
+		while (token != NULL)
+		{
+			num_tokens++;
+			token = strtok(NULL, delim);
+		}
 		num_tokens++;
-		token = strtok(NULL, delim);
+
+		if (num_tokens > 0)
+		{
+			argv = malloc(sizeof(char *) * (num_tokens + 1));
+			if (argv == NULL)
+			{
+				perror("memmory allocation failed");
+				return (-1);
+			}
+			token = strtok(line_cpy, delim);
+			for (i = 0; token != NULL; i++)
+			{
+				argv[i] = malloc(strlen(token) + 1);
+				if (argv[i] == NULL)
+				{
+					perror("malloc");
+					return (-1);
+				}
+				strcpy(argv[i], token);
+
+				token = strtok(NULL, delim);
+			}
+			argv[i] = NULL;
+
+			if (strcmp(argv[0], "exit") == 0)
+			{
+				exit_command = 0;
+				break;
+			}
+
+			/* Execute the command*/
+			child_pid = fork();
+			if (child_pid == 0)
+			{
+				execvp(argv[0], argv);
+                perror("execvp");
+                exit(1);
+			}
+
+			waitpid(child_pid, NULL, 0);
+
+			for (i = 0; argv[i] != NULL; i++)
+			{
+				free(argv[i]);
+			}
+			free(argv);
+
+		}
+		else
+		{
+			exit_command = 1;
+		}
+
 	}
-	num_tokens++;
-
-	argv = malloc(sizeof(char *) * num_tokens);
-
-	token = strtok(line_cpy, delim);
-	for (i = 0; token != NULL; i++)
-	{
-		argv[i] = malloc(sizeof(char *) * strlen(token));
-		strcpy(argv[i], token);
-
-		token = strtok(NULL, delim);
-	}
-	/**
-	 * After the loop we set the last index of argv to NULL to terminate the array of strings
-	*/
-	argv[i] = NULL;
-
-	/* Execute the command*/
-	exec(argv);
-	}
-
-	
-	free(line), free(argv), free(line_cpy);
+	free(line);
+	free(line_cpy);
 	return (0);
 }
