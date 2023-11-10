@@ -6,8 +6,8 @@
 void exec(char **argv)
 {
 	char *command = NULL, *actual_command = NULL, **env;
+	int status, exit_status = 0, signal;
 	pid_t pid;
-	int status, exit_status;
 	extern char **environ;
 
 	if (argv && argv[0])
@@ -37,8 +37,9 @@ void exec(char **argv)
 			if (execve(actual_command, argv, NULL) == -1)
 			{
 				perror("execve");
-				exit(1);
+				exit(EXIT_FAILURE);
 			}
+			free(actual_command);
 		}
 		else
 		{
@@ -47,15 +48,22 @@ void exec(char **argv)
 				perror("Waitpid");
 				exit(1);
 			}
-			exit_status = WEXITSTATUS(status);
-			if (exit_status != 0)
+
+			if (WIFEXITED(status))
 			{
-				fprintf(stderr, "Command '%s' failed with the exit status %d\n", command, exit_status);
+				exit_status = WEXITSTATUS(status);
+				if (exit_status != 0)
+				{
+					fprintf(stderr, "Command '%s' failed with the exit status %d\n", command, exit_status);
+					exit(exit_status);
+				}
+			}
+			else if (WIFSIGNALED(status))
+			{
+				signal = WTERMSIG(status);
+				fprintf(stderr, "Command '%s' terminated by signal %d\n", command, signal);
 			}
 		}
-		if (execve(actual_command, argv, NULL) == 0)
-		{
-			free(actual_command);
-		}
+
 	}
 }

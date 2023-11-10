@@ -9,12 +9,16 @@ int main(int argc, char **argv)
 {
 	char *prompt = ":) ";
 	size_t n = 0;
-	char *line = NULL, *line_cpy = NULL, *token = NULL;
+	char *line = NULL, *line_cpy = NULL, *token = NULL, *shell_name = NULL;
 	ssize_t chars_read;
 	const char *delim = " \n";
 	int num_tokens = 0, i, exit_command = 1;
 	pid_t child_pid;
-	(void)argc;
+
+	if (argc > 0)
+			{
+				shell_name = argv[0];
+			}
 
 	while (exit_command)
 	{
@@ -74,7 +78,7 @@ int main(int argc, char **argv)
 			if (child_pid == 0)
 			{
 				execvp(argv[0], argv);
-                perror("execvp");
+                fprintf(stderr, "%s: 1: %s: not found\n", shell_name, argv[0]);
                 exit(1);
 			}
 
