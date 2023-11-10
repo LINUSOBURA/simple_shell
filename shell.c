@@ -16,15 +16,14 @@ int main(int argc, char **argv)
 	pid_t child_pid;
 	(void)argc;
 
-	while (1)
+	while (exit_command)
 	{
-		if (exit_command)
+		if (isatty(0))
 			printf("%s", prompt);
 
 		chars_read = getline(&line, &n, stdin);
 		if (chars_read == -1)
 		{
-			perror("getline");
 			break;
 		}
 
@@ -87,6 +86,10 @@ int main(int argc, char **argv)
 			}
 			free(argv);
 
+		}
+		else
+		{
+			exit_command = 1;
 		}
 
 	}
