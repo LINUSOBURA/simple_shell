@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 			child_pid = fork();
 			if (child_pid == 0)
 			{
-				execvp(argv[0], argv);
+				execve(argv[0], argv, NULL);
                 fprintf(stderr, "%s: 1: %s: not found\n", shell_name, argv[0]);
                 exit(1);
 			}

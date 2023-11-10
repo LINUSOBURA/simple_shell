@@ -6,7 +6,7 @@
 */
 void *command_location(char *command)
 {
-	char *path, *path_cpy, *path_token, *file_path, *real_path;
+	char *path, *path_cpy, *path_token, *file_path;
 	size_t command_len, directory_len;
 	struct stat buffer;
 
@@ -39,16 +39,16 @@ void *command_location(char *command)
 				return (NULL);
 			}
 
-			strcpy(file_path, path_token);
-			strcat(file_path, "/");
-			strcat(file_path, command);
+			strncpy(file_path, path_token, directory_len);
+			file_path[directory_len] = '\0';
+            strncat(file_path, "/", 2);
+            strncat(file_path, command, command_len + 1);
 
 
 			if (stat(file_path, &buffer) == 0)
 			{
-				real_path = realpath(file_path, NULL);
-				free(file_path);
-				return (real_path);
+				free(path_cpy);
+				return (realpath(file_path, NULL));
 			}
 			else if (errno != ENOENT)
 			{
