@@ -45,6 +45,12 @@ int main(int argc, char **argv)
 		}
 		num_tokens++;
 
+		if (num_tokens == 0)
+		{
+			free(line_cpy);
+			continue;
+		}
+
 		if (num_tokens > 0)
 		{
 			argv = malloc(sizeof(char *) * (num_tokens + 1));
@@ -67,6 +73,11 @@ int main(int argc, char **argv)
 				token = strtok(NULL, delim);
 			}
 			argv[i] = NULL;
+
+			if (argv[0] == NULL)
+			{
+				continue;
+			}
 
 			if (strcmp(argv[0], "exit") == 0)
 			{

@@ -8,17 +8,11 @@ void exec(char **argv)
 	char *command = NULL, *actual_command = NULL, **env;
 	pid_t pid;
 	int status, exit_status;
-	extern char **environ;
 
+	env = __environ;
 	if (argv && argv[0])
 	{
 		command = argv[0];
-
-		if (strcmp(command, "env") == 0)
-		{
-			for (env = environ; *env != NULL; env++)
-			printf("%s\n", *env);
-		}
 
 		actual_command = command_location(command);
 		if (actual_command == NULL)
@@ -34,10 +28,20 @@ void exec(char **argv)
 		}
 		else if (pid == 0)
 		{
-			if (execve(actual_command, argv, NULL) == -1)
+			if (strcmp(actual_command, "env") == 0)
 			{
-				perror("execve");
-				exit(1);
+				while (*env != NULL)
+				{
+					printf("%s\n", *env);
+				}
+			}
+			else
+			{
+				if (execve(actual_command, argv, NULL) == -1)
+				{
+					perror("execve");
+					exit(1);
+				}
 			}
 		}
 		else
