@@ -1,25 +1,27 @@
 #include "shell.h"
+
 /**
  * main - entry point of our code
  * @argc: arguments count
  * @argv: Arguments array
- * Return: 0 sucess
-*/
+ * Return: 0 success
+ */
 int main(int argc, char **argv)
 {
 	char *prompt = ":) ";
 	size_t n = 0;
-	char *line = NULL, *line_cpy = NULL, *token = NULL;
+	char *line = NULL, *shell_name = NULL;
+	char **tokens;
 	ssize_t chars_read;
-	const char *delim = " \n";
-	int num_tokens = 0, i, exit_command = 1;
-	pid_t child_pid;
+	int exit_command = 1;
 	(void)argc;
+
+	shell_name = argv[0];
 
 	while (exit_command)
 	{
 		if (isatty(0))
-			printf("%s", prompt);
+			write(1, prompt, strlen(prompt));
 
 		chars_read = getline(&line, &n, stdin);
 		if (chars_read == -1)
@@ -30,70 +32,24 @@ int main(int argc, char **argv)
 		if (chars_read == 1 && line[0] == '\n')
 			continue;
 
-		line_cpy = strdup(line);
+		tokens = tokenize_input(line);
 
-		token = strtok(line, delim);
-		while (token != NULL)
+		if (tokens == NULL || tokens[0] == NULL)
 		{
-			num_tokens++;
-			token = strtok(NULL, delim);
-		}
-		num_tokens++;
-
-		if (num_tokens > 0)
-		{
-			argv = malloc(sizeof(char *) * (num_tokens + 1));
-			if (argv == NULL)
-			{
-				perror("memmory allocation failed");
-				return (-1);
-			}
-			token = strtok(line_cpy, delim);
-			for (i = 0; token != NULL; i++)
-			{
-				argv[i] = malloc(strlen(token) + 1);
-				if (argv[i] == NULL)
-				{
-					perror("malloc");
-					return (-1);
-				}
-				strcpy(argv[i], token);
-
-				token = strtok(NULL, delim);
-			}
-			argv[i] = NULL;
-
-			if (strcmp(argv[0], "exit") == 0)
-			{
-				exit_command = 0;
-				break;
-			}
-
-			/* Execute the command*/
-			child_pid = fork();
-			if (child_pid == 0)
-			{
-				execvp(argv[0], argv);
-                perror("execvp");
-                exit(1);
-			}
-
-			waitpid(child_pid, NULL, 0);
-
-			for (i = 0; argv[i] != NULL; i++)
-			{
-				free(argv[i]);
-			}
-			free(argv);
-
-		}
-		else
-		{
-			exit_command = 1;
+			free_tokens(tokens);
+			continue;
 		}
 
+		if (strcmp(tokens[0], "exit") == 0)
+		{
+			exit_command = 0;
+			free_tokens(tokens);
+			break;
+		}
+		
+		execute_command(tokens, shell_name);
 	}
+
 	free(line);
-	free(line_cpy);
-	return (0);
+	return 0;
 }
