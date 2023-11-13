@@ -6,72 +6,63 @@
 */
 void *command_location(char *command)
 {
-	char *path, *path_cpy, *path_token, *file_path;
-	size_t command_len, directory_len;
+	char *path, *path_cpy, *path_token;
 	struct stat buffer;
 
-	if (command == NULL)
-	{
-		return (NULL);
-	}
+	    if (command == NULL)
+    {
+        return NULL;
+    }
 
-	path = getenv("PATH");
-	if (path == NULL)
-	{
-		return (NULL);
-	}
+    /*Check if the command is an absolute path*/
+    if (command[0] == '/' || command[0] == '.')
+    {
+        /*If it is, check if the file exists*/
+        if (stat(command, &buffer) == 0)
+        {
+            return realpath(command, NULL);
+        }
+        else
+        {
+            return NULL;
+        }
+    }
 
-	if (path)
-	{
-		path_cpy = strdup(path);
+    path = getenv("PATH");
+    if (path == NULL)
+    {
+        return NULL;
+    }
 
-		command_len = strlen(command);
+    path_cpy = strdup(path);
+    path_token = strtok(path_cpy, ":");
 
-		path_token = strtok(path_cpy, ":");
+    while (path_token != NULL)
+    {
+        char *file_path = malloc(strlen(path_token) + strlen(command) + 2);
+        if (file_path == NULL)
+        {
+            free(path_cpy);
+            return NULL;
+        }
 
-		while (path_token != NULL)
-		{
-			directory_len = strlen(path_token);
+        strcpy(file_path, path_token);
+		if (strlen(path_token) > 0)
+        	strcat(file_path, "/");
+        strcat(file_path, command);
 
-			file_path = malloc(command_len + directory_len + 2);
-			if (file_path == NULL)
-			{
-				return (NULL);
-			}
+        if (stat(file_path, &buffer) == 0)
+        {
+            free(path_cpy);
+            return realpath(file_path, NULL);
+        }
 
-			strncpy(file_path, path_token, directory_len);
-			file_path[directory_len] = '\0';
-            strncat(file_path, "/", 2);
-            strncat(file_path, command, command_len + 1);
+        free(file_path);
+        path_token = strtok(NULL, ":");
+    }
 
+    free(path_cpy);
 
-			if (stat(file_path, &buffer) == 0)
-			{
-				free(path_cpy);
-				return (realpath(file_path, NULL));
-			}
-			else if (errno != ENOENT)
-			{
-				perror("stat");
-				free(file_path);
-			}
-			else
-			{
-				free(file_path);
-				path_token = strtok(NULL, ":");
-			}
-		}
-
-		free(path_cpy);
-
-		if (stat(command, &buffer) == 0)
-		{
-			return (command);
-		}
-
-		return (NULL);
-	}
-
-	return (NULL);
-
+    /*If the command is not found in PATH, return NULL*/
+    return NULL;
 }
