@@ -1,61 +1,86 @@
 #include "shell.h"
+
 /**
- * exec - function to excetute commands passed to our shell
- * @argv: arguments
-*/
-void exec(char **argv)
+ * exec_comm - executes the given command
+ * @command: the command to execute
+ * @argv: arguments for the command
+ * @env: environment variables
+ */
+void exec_comm(char *command, char **argv, char **env)
 {
-	char *command = NULL, *actual_command = NULL, **env;
 	pid_t pid;
 	int status, exit_status;
 
-	env = environ;
-
-	if (argv && argv[0])
+	pid = fork();
+	if (pid == -1)
 	{
-		command = argv[0];
+		perror("Fork");
+		exit(1);
+	}
+	else if (pid == 0)
+	{
+		if (execve(command, argv, env) == -1)
+		{
+			perror(command);
+			exit(1);
+		}
+	}
+	else
+	{
+		if (waitpid(pid, &status, 0) == -1)
+		{
+			perror("Waitpid");
+			exit(1);
+		}
+		exit_status = WEXITSTATUS(status);
+		if (exit_status != 0)
+		{
+			fprintf(stderr, "Command '%s' failed with the exit status %d\n",
+			command, exit_status);
 
-		actual_command = command_location(command);
+		}
+	}
+}
+
+/**
+ * exec_shell_command - executes shell-specific commands
+ * @command: the command to execute
+ * @argv: arguments for the command
+ * @env: environment variables
+ */
+
+void exec_shell_command(char *command, char **argv, char **env)
+{
+	if (strcmp(command, "env") == 0)
+	{
+		print_environment();
+	}
+	else
+	{
+		char *actual_command = command_location(command);
+
 		if (actual_command == NULL)
 		{
 			fprintf(stderr, "Failed to find command '%s'\n", command);
 			return;
 		}
 
-		pid = fork();
-		if (pid == -1)
-		{
-			perror("Fork");
-			exit(1);
-		}
-		else if (pid == 0)
-		{
-			if (strcmp(actual_command, "env") == 0)
-			{
-				print_environment();
-			}
-			else
-			{
-				if (execve(actual_command, argv, env) == -1)
-				{
-					perror(actual_command);
-					exit(1);
-				}
-			}
-		}
-		else
-		{
-			if (waitpid(pid, &status, 0) == -1)
-			{
-				perror("Waitpid");
-				exit(1);
-			}
-			exit_status = WEXITSTATUS(status);
-			if (exit_status != 0)
-			{
-				fprintf(stderr, "Command '%s' failed with the exit status %d\n", command, exit_status);
+		exec_comm(actual_command, argv, env);
+	}
+}
 
-			}
-		}
+/**
+ * exec - function to excetute commands passed to our shell
+ * @argv: arguments
+*/
+void exec(char **argv)
+{
+	char *command = NULL;
+	char **env = environ;
+
+	if (argv && argv[0])
+	{
+		command = argv[0];
+		exec_shell_command(command, argv, env);
 	}
 }
