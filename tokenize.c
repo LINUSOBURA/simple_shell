@@ -1,62 +1,65 @@
 #include "shell.h"
 
+/**
+ * allocate_and_copy - allocates memory and copies a string
+ * @str: the string to copy
+ * Return: a pointer to the new string
+ */
+char *allocate_and_copy(const char *str)
+{
+	char *copy = strdup(str);
+
+	if (copy == NULL)
+	{
+		perror("malloc");
+		exit(EXIT_FAILURE);
+	}
+	return (copy);
+}
+
+/**
+ * tokenize_input - tokenizes the input string
+ * @input: the input string to tokenize
+ * Return: array of tokens
+ */
+
 char **tokenize_input(char *input)
 {
-	char *input_cpy = NULL, *token = NULL, **argv;
 	const char *delim = " \n";
-	int num_tokens = 0, i, j;
+	char *input_cpy = allocate_and_copy(input);
+	char **argv, *token = strtok(input_cpy, delim);
+	int num_tokens = 0, i;
 
-	if (input == NULL)
-	{
-		return (NULL);
-	}
-
-	input_cpy = strdup(input);
-
-	token = strtok(input_cpy, delim);
 	while (token != NULL)
 	{
 		num_tokens++;
 		token = strtok(NULL, delim);
 	}
-	num_tokens++;
+
+	free(input_cpy);
 
 	if (num_tokens == 0)
 	{
-		free(input_cpy);
 		return (NULL);
 	}
 
-	if (num_tokens > 0)
+	argv = malloc(sizeof(char *) * (num_tokens + 1));
+	if (argv == NULL)
 	{
-		argv = malloc(sizeof(char *) * (num_tokens + 1));
-		if (argv == NULL)
-		{
-			perror("memmory allocation failed");
-			free(input_cpy);
-			return (NULL);
-		}
-		token = strtok(input, delim);
-		for (i = 0; token != NULL; i++)
-		{
-			argv[i] = malloc(strlen(token) + 1);
-			if (argv[i] == NULL)
-			{
-				perror("malloc");
-				free(input);
-				for (j = 0; j < i; j++)
-				{
-					free(argv[j]);
-				}
-				free(argv);
-				return (NULL);
-			}
-			strcpy(argv[i], token);
-
-			token = strtok(NULL, delim);
-		}
-		argv[i] = NULL;
+		perror("memory allocation failed");
+		exit(EXIT_FAILURE);
 	}
+
+	input_cpy = allocate_and_copy(input);
+	token = strtok(input_cpy, delim);
+
+	for (i = 0; token != NULL; i++)
+	{
+		argv[i] = allocate_and_copy(token);
+		token = strtok(NULL, delim);
+	}
+	argv[i] = NULL;
+
 	free(input_cpy);
 	return (argv);
 }
