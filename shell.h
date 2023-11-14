@@ -27,4 +27,8 @@ void *command_location(char *command);
 extern char **environ;
 void print_environment(void);
 
+/* Builtin commands */
+int execute_builtin(char **tokens, const char *shell_name);
+int is_builtin(char *command);
+
 #endif

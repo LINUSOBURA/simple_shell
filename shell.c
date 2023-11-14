@@ -29,29 +29,34 @@ void process_input(char **line, size_t *n, int *exit_command, char *shell_name)
 			*exit_command = 0;
 			return;
 		}
-
 	if (chars_read == 1 && (*line)[0] == '\n')
 		return;
 
 	tokens = tokenize_input(*line);
-
 		if (tokens == NULL || tokens[0] == NULL)
 		{
 			free_tokens(tokens);
 			return;
 		}
 
-		if (strcmp(tokens[0], "exit") == 0)
+		if (is_builtin(tokens[0]))
 		{
-			*exit_command = 0;
-			return;
+			if (strcmp(tokens[0], "cd") == 0)
+			{
+				if (execute_builtin(tokens, shell_name) == -1)
+					fprintf(stderr, "%s: 1: cd: can't cd to %s\n", shell_name, tokens[1]);
+			}
+			else if (execute_builtin(tokens, shell_name) == -1)
+			{
+				*exit_command = 0;
+				return;
+			}
 		}
 		else
 		{
 			execute_command(tokens, shell_name);
 			free_tokens(tokens);
 		}
-
 }
 /**
  * main - entry point of our code
