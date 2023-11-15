@@ -84,6 +84,7 @@ void execute_command(char **tokens, const char *shell_name)
 {
 	pid_t child_pid;
 	int child_exit_status;
+	char *command_path;
 
 	child_pid = fork();
 	if (child_pid == -1)
@@ -99,5 +100,7 @@ void execute_command(char **tokens, const char *shell_name)
 	else
 	{
 		handle_child_termination(child_pid, &child_exit_status, tokens);
+		command_path = command_location(tokens[0]);
+		free(command_path);
 	}
 }
