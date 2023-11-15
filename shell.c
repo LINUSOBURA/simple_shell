@@ -80,6 +80,11 @@ int main(int argc, char **argv)
 	{
 		display_prompt();
 		process_input(&line, &n, &exit_command, shell_name);
+
+		if (shell_exit(tokens, shell_name) == -1)
+		{
+			exit_command = 0;
+		}
 	}
 
 	free(line);
