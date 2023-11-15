@@ -30,7 +30,7 @@ int shell_exit(char **argv, const char *shell_name)
 	{
 		exit(0);
 	}
-	return (0);
+	return (-1);
 }
 
 /**
