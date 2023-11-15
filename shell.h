@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <limits.h>
+#include <pwd.h>
 
 /*Tokenization*/
 char **tokenize_input(char *input);
@@ -30,5 +32,6 @@ void print_environment(void);
 /* Builtin commands */
 int execute_builtin(char **tokens, const char *shell_name);
 int is_builtin(char *command);
+int shell_cd(char **argv);
 
 #endif

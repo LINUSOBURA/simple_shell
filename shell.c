@@ -21,7 +21,7 @@ void display_prompt(void)
 void process_input(char **line, size_t *n, int *exit_command, char *shell_name)
 {
 	ssize_t chars_read;
-	char **tokens;
+	char **tokens, *comment_ptr;
 
 	chars_read = getline(line, n, stdin);
 		if (chars_read == -1)
@@ -29,16 +29,19 @@ void process_input(char **line, size_t *n, int *exit_command, char *shell_name)
 			*exit_command = 0;
 			return;
 		}
+	comment_ptr = strchr(*line, '#');
+	if (comment_ptr &&  (comment_ptr == *line || *(comment_ptr - 1) == ' '))
+	{
+		*comment_ptr = '\0';
+	}
 	if (chars_read == 1 && (*line)[0] == '\n')
 		return;
-
 	tokens = tokenize_input(*line);
 		if (tokens == NULL || tokens[0] == NULL)
 		{
 			free_tokens(tokens);
 			return;
 		}
-
 		if (is_builtin(tokens[0]))
 		{
 			if (strcmp(tokens[0], "cd") == 0)
