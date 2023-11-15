@@ -33,5 +33,6 @@ void print_environment(void);
 int execute_builtin(char **tokens, const char *shell_name);
 int is_builtin(char *command);
 int shell_cd(char **argv);
+int shell_exit(char **argv, const char *shell_name);
 
 #endif
