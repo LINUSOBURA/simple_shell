@@ -37,5 +37,6 @@ int shell_cd(char **argv)
 			return (-1);
 		}
 	}
+	free(curreny_dir);
 	return (0);
 }
