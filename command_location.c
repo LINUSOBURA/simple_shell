@@ -53,7 +53,7 @@ char *search_in_path(char *command)
 
 		if (file_path == NULL)
 		{
-			free(path_cpy);
+			free(file_path);
 			return (NULL);
 		}
 
